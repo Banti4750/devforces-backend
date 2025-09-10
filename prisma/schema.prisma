@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ContestStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+}
+
+enum SubmissionStatus {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  username     String   @unique
+  email        String   @unique
+  password     String // Hash this using bcrypt or similar
+  firstName    String?
+  lastName     String?
+  role         Role     @default(USER)
+  profilePic   String?
+  isVerified   Boolean  @default(false)
+  country      String?
+  organization String?
+  joinedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  submissions          Submission[]
+  contestRegistrations ContestRegistration[]
+  problemsAuthored     Problem[]             @relation("ProblemAuthor")
+  contestsAuthored     Contest[]             @relation("ContestAuthor")
+  leaderboardEntry     Leaderboard?
+  ratings              RatingHistory[]
+
+  @@map("users")
+}
+
+model Contest {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  authorId    String        @db.ObjectId
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int // Duration in minutes
+  status      ContestStatus @default(UPCOMING)
+  isPublic    Boolean       @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author        User                  @relation("ContestAuthor", fields: [authorId], references: [id])
+  problems      ContestProblem[]
+  registrations ContestRegistration[]
+  submissions   Submission[]
+  RatingHistory RatingHistory[]
+
+  @@map("contests")
+}
+
+model Problem {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  authorId    String     @db.ObjectId
+  difficulty  Difficulty
+
+  // Development-specific fields
+  taskType     String // "auth-setup", "api-routes", "database-design", etc.
+  technologies String[] // ["Node.js", "Express", "MongoDB", etc.]
+  starterCode  String? // Optional starter code for the problem
+  solution     String? // Reference solution (for evaluation)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author      User             @relation("ProblemAuthor", fields: [authorId], references: [id])
+  tags        ProblemTag[]
+  contests    ContestProblem[]
+  submissions Submission[]
+  testCases   TestCase[]
+
+  @@map("problems")
+}
+
+model TestCase {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  problemId      String  @db.ObjectId
+  input          String // Input data for the test case
+  expectedOutput String // Expected output
+  isPublic       Boolean @default(false) // Whether this test case is shown to users
+  explanation    String? // Explanation of what this test case validates
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@map("test_cases")
+}
+
+model Tag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  problems ProblemTag[]
+
+  @@map("tags")
+}
+
+// Junction table for Problem-Tag many-to-many relationship
+model ProblemTag {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  problemId String @db.ObjectId
+  tagId     String @db.ObjectId
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, tagId])
+  @@map("problem_tags")
+}
+
+// Junction table for Contest-Problem relationship
+model ContestProblem {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  contestId String @db.ObjectId
+  problemId String @db.ObjectId
+  index     String // A, B, C, etc.
+  points    Int // Points awarded for solving this problem in the contest
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, problemId])
+  @@unique([contestId, index])
+  @@map("contest_problems")
+}
+
+model ContestRegistration {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  contestId String @db.ObjectId
+
+  registeredAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@map("contest_registrations")
+}
+
+model Submission {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String  @db.ObjectId
+  problemId String  @db.ObjectId
+  contestId String? @db.ObjectId
+
+  code     String // Submitted code
+  language String // Programming language used
+  status   SubmissionStatus @default(PENDING)
+  points   Int              @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id])
+  problem Problem  @relation(fields: [problemId], references: [id])
+  contest Contest? @relation(fields: [contestId], references: [id])
+
+  @@map("submissions")
+}
+
+// For overall platform leaderboard (not contest-specific)
+model Leaderboard {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  rank   Int
+  rating Int    @default(1200)
+
+  // Stats
+  problemsSolved       Int @default(0)
+  contestsParticipated Int @default(0)
+  totalPoints          Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("leaderboard")
+}
+
+model RatingHistory {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  contestId String @db.ObjectId
+  oldRating Int
+  newRating Int
+  change    Int // newRating - oldRating
+
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  contest Contest @relation(fields: [contestId], references: [id])
+
+  @@map("rating_history")
+}
