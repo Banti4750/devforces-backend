@@ -5,7 +5,7 @@ import { createUserSchema, loginUserSchema } from "../../validations/user.valida
 import jwt from "jsonwebtoken";
 import { verifyToken } from "../../middleware/verifyToken.js";
 import moment from "moment";
-import { join } from "@prisma/client/runtime/library";
+
 const router = Router();
 
 // Define your auth routes here (e.g., register, login, logout)
