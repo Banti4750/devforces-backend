@@ -1,7 +1,11 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../../config/db.js";
-import { createUserSchema } from "../../validations/user.validation.js";
+import { createUserSchema, loginUserSchema } from "../../validations/user.validation.js";
+import jwt from "jsonwebtoken";
+import { verifyToken } from "../../middleware/verifyToken.js";
+import moment from "moment";
+import { join } from "@prisma/client/runtime/library";
 const router = Router();
 
 // Define your auth routes here (e.g., register, login, logout)
@@ -33,16 +37,64 @@ router.post('/register', async (req, res) => {
             data: { ...data, password: hashedPassword },
         });
 
-        res.status(201).json({ id: user.id, username: user.username, email: user.email });
+        res.status(201).json({ id: user.id, email: user.email });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
 
-router.post('/login', (req, res) => {
-    // Login logic here
-    res.send('User logged in');
+router.post('/login', async (req, res) => {
+
+    try {
+        const parsed = loginUserSchema.safeParse(req.body);
+
+        if (!parsed.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: parsed.error.format(),
+            });
+        }
+        const data = parsed.data;
+
+        // Login logic here (e.g., verify user, create session/token)
+
+        const user = await prisma.user.findUnique({
+            where: { email: data.email },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: "Invalid email or password" });
+        }
+
+        if (!await bcrypt.compare(data.password, user.password)) {
+            return res.status(400).json({ message: "Invalid email or password" });
+        }
+
+        //token creation logic here
+        const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.status(200).json({ message: "Login successful", token });
+
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+router.get('/profile', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, firstName: true, lastName: true, role: true, profilePic: true, isVerified: true, country: true, organization: true, joinedAt: true }
+        });
+        res.status(200).json({ user, joinedAtFormatted: moment(user.joinedAt).format('DD MMMM YYYY') });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 router.post('/logout', (req, res) => {
