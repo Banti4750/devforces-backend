@@ -36,9 +36,8 @@ enum SubmissionStatus {
 
 model User {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  username     String   @unique
   email        String   @unique
-  password     String // Hash this using bcrypt or similar
+  password     String
   firstName    String?
   lastName     String?
   role         Role     @default(USER)
