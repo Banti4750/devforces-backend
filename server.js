@@ -17,10 +17,11 @@ app.get('/', async (req, res) => {
         const users = await prisma.user.findMany();
         res.json(users);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("Prisma error:", error);
+        res.status(500).json({ error: error.message });
     }
 });
+
 
 
 app.listen(PORT, () => {
