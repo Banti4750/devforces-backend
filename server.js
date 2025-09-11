@@ -23,6 +23,10 @@ app.get('/', async (req, res) => {
 });
 
 
+app.get("/test", (req, res) => {
+    res.send("Devforces Backend is Live ✅");
+});
+
 
 app.listen(PORT, () => {
     console.log(`✅ Server is running on http://localhost:${PORT}`);
