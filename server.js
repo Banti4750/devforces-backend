@@ -1,9 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { prisma } from './config/db.js';
-
+import adminContestRoutes from './routes/admin/contestRoutes.js';
 import authRoutes from './routes/user/authRoutes.js';
 import adminAuthRoutes from './routes/admin/authRuotes.js';
+import userContestRoutes from './routes/user/contestRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -12,10 +13,12 @@ app.use(express.json());
 
 //user routes
 app.use('/api/auth', authRoutes);
+app.use('/api/contests', userContestRoutes);
 
 
 //admin routes
 app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin/contests', adminContestRoutes);
 
 //test route
 app.get('/', async (req, res) => {
