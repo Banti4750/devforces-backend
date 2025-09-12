@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { prisma } from './config/db.js';
 
 import authRoutes from './routes/user/authRoutes.js';
+import adminAuthRoutes from './routes/admin/authRuotes.js';
 
 dotenv.config();
 const app = express();
@@ -12,6 +13,11 @@ app.use(express.json());
 //user routes
 app.use('/api/auth', authRoutes);
 
+
+//admin routes
+app.use('/api/admin/auth', adminAuthRoutes);
+
+//test route
 app.get('/', async (req, res) => {
     try {
         const users = await prisma.user.findMany();
