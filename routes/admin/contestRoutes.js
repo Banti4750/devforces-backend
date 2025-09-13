@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createContestSchema } from "../../validations/contest.validation.js";
+import { createContestSchema, updateContestSchema } from "../../validations/contest.validation.js";
 import { prisma } from "../../config/db.js";
 import { verifyAdminToken } from "../../middleware/verifyToken.js";
 const router = Router();
@@ -40,7 +40,7 @@ router.post("/", verifyAdminToken, async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
 
-        const parsed = createContestSchema.partial().safeParse(req.body);
+        const parsed = updateContestSchema.partial().safeParse(req.body);
 
         if (!parsed.success) {
             return res.status(400).json({
