@@ -5,6 +5,8 @@ import adminContestRoutes from './routes/admin/contestRoutes.js';
 import authRoutes from './routes/user/authRoutes.js';
 import adminAuthRoutes from './routes/admin/authRuotes.js';
 import userContestRoutes from './routes/user/contestRoutes.js';
+import adminTagRoutes from './routes/admin/tagRoutes.js';
+import userTagRoutes from './routes/user/tagRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -14,11 +16,13 @@ app.use(express.json());
 //user routes
 app.use('/api/auth', authRoutes);
 app.use('/api/contests', userContestRoutes);
+app.use('/api/tags', userTagRoutes);
 
 
 //admin routes
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/contests', adminContestRoutes);
+app.use('/api/admin/tags', adminTagRoutes);
 
 //test route
 app.get('/', async (req, res) => {
