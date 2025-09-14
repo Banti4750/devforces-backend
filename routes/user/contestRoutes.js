@@ -6,30 +6,29 @@ const router = Router();
 //get all contests
 router.get("/", async (req, res) => {
     try {
-        //latest contests first
-        const contests = await prisma.contest.findMany({})
-        res.status(200).json(contests);
-    } catch (error) {
-        console.error("Error fetching contests:", error);
-        res.status(500).json({ message: "Server error" });
+        const contests = await prisma.contest.findMany({
+            include: { problems: { include: { problem: true } } },
+        });
+        res.json(contests);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching contests", error: err.message });
     }
 });
 
 
-//get a single contest by id
+// GET /contests/:id
 router.get("/:id", async (req, res) => {
     try {
         const contest = await prisma.contest.findUnique({
             where: { id: req.params.id },
+            include: { problems: { include: { problem: true } } },
         });
-        if (!contest) {
-            return res.status(404).json({ message: "Contest not found" });
-        }
-        res.status(200).json(contest);
-    }
-    catch (error) {
-        console.error("Error fetching contest:", error);
-        res.status(500).json({ message: "Server error" });
+
+        if (!contest) return res.status(404).json({ message: "Contest not found" });
+
+        res.json(contest);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching contest", error: err.message });
     }
 });
 
