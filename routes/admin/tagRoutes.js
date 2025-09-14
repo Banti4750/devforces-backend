@@ -4,7 +4,7 @@ import { verifyAdminToken } from "../../middleware/verifyToken.js";
 import { prisma } from "../../config/db.js";
 
 //  Create a new tag
-export const createTag = async (req, res) => {
+const createTag = async (req, res) => {
     try {
         const { name } = req.body;
 
@@ -22,7 +22,7 @@ export const createTag = async (req, res) => {
 };
 
 //  Get all tags
-export const getTags = async (req, res) => {
+const getTags = async (req, res) => {
     try {
         const tags = await prisma.tag.findMany({
             orderBy: { createdAt: "desc" },
@@ -34,7 +34,7 @@ export const getTags = async (req, res) => {
 };
 
 // Get tag by ID
-export const getTagById = async (req, res) => {
+const getTagById = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -51,7 +51,7 @@ export const getTagById = async (req, res) => {
 };
 
 //  Update tag
-export const updateTag = async (req, res) => {
+const updateTag = async (req, res) => {
     try {
         const { id } = req.params;
         const { name } = req.body;
@@ -71,7 +71,7 @@ export const updateTag = async (req, res) => {
 };
 
 //  Delete tag
-export const deleteTag = async (req, res) => {
+const deleteTag = async (req, res) => {
     try {
         const { id } = req.params;
 
