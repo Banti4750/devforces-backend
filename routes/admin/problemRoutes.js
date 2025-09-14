@@ -10,7 +10,7 @@ const router = express.Router();
 const createProblem = async (req, res) => {
     try {
         const { title, description, difficulty, taskType, technologies, starterCode, solution, tags } = req.body;
-        const authorId = req.user?.id; // from auth middleware
+        const authorId = req.user?.id;
 
         const problem = await prisma.problem.create({
             data: {
@@ -145,8 +145,9 @@ const deleteProblem = async (req, res) => {
 // Add one/multiple tags to a problem
 const addTagsToProblem = async (req, res) => {
     try {
-        const { id } = req.params; // problemId
-        const { tags } = req.body; // array of tagIds
+        const { id } = req.params;
+        // array of tagIds
+        const { tags } = req.body;
 
         const updated = await prisma.problem.update({
             where: { id },
@@ -167,7 +168,7 @@ const addTagsToProblem = async (req, res) => {
 // Get all tags for a problem
 const getTagsForProblem = async (req, res) => {
     try {
-        const { id } = req.params; // problemId
+        const { id } = req.params;
         const problem = await prisma.problem.findUnique({
             where: { id },
             include: { tags: { include: { tag: true } } },

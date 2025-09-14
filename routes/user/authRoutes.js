@@ -57,7 +57,6 @@ router.post('/login', async (req, res) => {
         }
         const data = parsed.data;
 
-        // Login logic here (e.g., verify user, create session/token)
 
         const user = await prisma.user.findUnique({
             where: { email: data.email },

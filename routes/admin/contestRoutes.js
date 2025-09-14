@@ -5,13 +5,11 @@ import { verifyAdminToken } from "../../middleware/verifyToken.js";
 const router = Router();
 
 //add a new contest
-// POST /contests
 router.post("/", verifyAdminToken, async (req, res) => {
     try {
         const { name, description, startTime, endTime, problems } = req.body;
-        const authorId = req.user?.id; // from auth middleware
+        const authorId = req.user?.id;
 
-        // Basic validation
         if (!name || !startTime || !endTime || !problems || problems.length === 0) {
             return res.status(400).json({ message: "Name, startTime, endTime, and at least one problem are required" });
         }
@@ -66,9 +64,7 @@ router.put("/:id", verifyAdminToken, async (req, res) => {
             include: { problems: true },
         });
 
-        // 🔄 Update problems if provided
         if (problems && problems.length > 0) {
-            // Delete old mappings
             await prisma.contestProblem.deleteMany({
                 where: { contestId: contest.id },
             });
