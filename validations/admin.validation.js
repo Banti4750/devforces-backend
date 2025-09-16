@@ -15,8 +15,7 @@ const strongPassword = z
 const adminBaseSchema = z.object({
     email: z.string().email("Invalid email format"),
     password: strongPassword,
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
+    name: z.string().optional(),
     role: RoleEnum.default("ADMIN"),
     profilePic: z.string().url("Invalid profile picture URL").optional(),
     isVerified: z.boolean().default(false),
