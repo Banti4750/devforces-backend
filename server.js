@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors'
 import { prisma } from './config/db.js';
 import adminContestRoutes from './routes/admin/contestRoutes.js';
 import authRoutes from './routes/user/authRoutes.js';
@@ -14,6 +15,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
+app.use(cors())
 
 //user routes
 app.use('/api/auth', authRoutes);
