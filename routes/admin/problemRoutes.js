@@ -4,8 +4,6 @@ import { verifyAdminToken } from "../../middleware/verifyToken.js";
 
 const router = express.Router();
 
-
-
 // Create a new problem
 const createProblem = async (req, res) => {
     try {
@@ -46,8 +44,7 @@ const getProblems = async (req, res) => {
                 testCases: true,
                 author: {
                     select: {
-                        firstName: true,
-                        lastName: true,
+                        name: true,
                         profilePic: true,
                         country: true,
                         organization: true,
@@ -75,8 +72,7 @@ const getProblemById = async (req, res) => {
                 testCases: true,
                 author: {
                     select: {
-                        firstName: true,
-                        lastName: true,
+                        name: true,
                         profilePic: true,
                         country: true,
                         organization: true,
