@@ -8,12 +8,15 @@ const getProblems = async (req, res) => {
     try {
         const problems = await prisma.problem.findMany({
             include: {
-                tags: true,
+                tags: {
+                    include: {
+                        tag: true, // fetch full tag info
+                    },
+                },
                 testCases: true,
                 author: {
                     select: {
-                        firstName: true,
-                        lastName: true,
+                        name: true,
                         profilePic: true,
                         country: true,
                         organization: true,
@@ -25,6 +28,7 @@ const getProblems = async (req, res) => {
 
         res.json({ success: true, problems });
     } catch (error) {
+        console.log(error.message)
         res.status(500).json({
             success: false,
             message: "Failed to fetch problems",
@@ -41,12 +45,15 @@ const getProblemById = async (req, res) => {
         const problem = await prisma.problem.findUnique({
             where: { id },
             include: {
-                tags: true,
+                tags: {
+                    include: {
+                        tag: true, // fetch full tag info
+                    },
+                },
                 testCases: true,
                 author: {
                     select: {
-                        firstName: true,
-                        lastName: true,
+                        name: true,
                         profilePic: true,
                         country: true,
                         organization: true,
@@ -62,6 +69,9 @@ const getProblemById = async (req, res) => {
         res.status(500).json({ success: false, message: "Failed to fetch problem", error: error.message });
     }
 };
+
+//number of problem solved by user
+
 
 router.get("/", getProblems);
 router.get("/:id", getProblemById);
