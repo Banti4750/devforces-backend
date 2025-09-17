@@ -10,6 +10,7 @@ import adminTagRoutes from './routes/admin/tagRoutes.js';
 import userTagRoutes from './routes/user/tagRoutes.js';
 import adminProblemRoutes from './routes/admin/problemRoutes.js';
 import userProblemRoutes from './routes/user/problemRoutes.js';
+import adminTestCaseRoutes from './routes/admin/testcaseRoutes.js'
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/contests', adminContestRoutes);
 app.use('/api/admin/tags', adminTagRoutes);
 app.use('/api/admin/problems', adminProblemRoutes);
+app.use('/api/admin/testcase', adminTestCaseRoutes)
 
 //test route
 app.get('/', async (req, res) => {
