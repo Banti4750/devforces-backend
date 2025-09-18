@@ -2,33 +2,51 @@
 import express from "express";
 const router = express.Router();
 import { prisma } from "../../config/db.js";
+import { verifyToken } from "../../middleware/verifyToken.js";
 
 //  Get all problems
 const getProblems = async (req, res) => {
+    const { category, difficulty, tags } = req.body;
+
     try {
         const problems = await prisma.problem.findMany({
+            where: {
+                ...(category && category !== "ALL" ? { taskType: category } : {}),
+                ...(difficulty && difficulty !== "ALL" ? { difficulty } : {}),
+                ...(tags && tags.length > 0
+                    ? {
+                        tags: {
+                            some: {
+                                tag: {
+                                    name: { in: tags },
+                                },
+                            },
+                        },
+                    }
+                    : {}),
+            },
             include: {
                 tags: {
                     include: {
-                        tag: true, // fetch full tag info
-                    },
-                },
-                testCases: true,
-                author: {
-                    select: {
-                        name: true,
-                        profilePic: true,
-                        country: true,
-                        organization: true,
-                        isVerified: true,
+                        tag: true,
                     },
                 },
             },
         });
 
-        res.json({ success: true, problems });
+        // Format output
+        const formattedProblems = problems.map((p, index) => ({
+            id: index + 1, // or use p.id
+            title: p.title,
+            category: p.taskType || "General",
+            difficulty: p.difficulty || "Unknown",
+            status: "unsolved", // later can map from submissions
+            tags: p.tags.map((t) => t.tag.name),
+        }));
+
+        res.json({ success: true, problems: formattedProblems });
     } catch (error) {
-        console.log(error.message)
+        console.error(error.message);
         res.status(500).json({
             success: false,
             message: "Failed to fetch problems",
@@ -73,7 +91,7 @@ const getProblemById = async (req, res) => {
 //number of problem solved by user
 
 
-router.get("/", getProblems);
-router.get("/:id", getProblemById);
+router.post("/", verifyToken, getProblems);
+router.get("/:id", verifyToken, getProblemById);
 
 export default router;
