@@ -32,8 +32,32 @@ export const getTagById = async (req, res) => {
     }
 };
 
+// get category
+export const getCategory = async (req, res) => {
+    try {
+        const problems = await prisma.problem.findMany({
+        });
+
+        const category = [
+            "ALL",
+            ...new Set(problems.map(p => p.taskType || "General"))
+        ].map(category => ({ category }));
+
+        res.status(200).json({ success: true, category });
+    } catch (error) {
+        console.log(error.message)
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch category",
+            error: error.message
+        });
+    }
+};
+
+
 
 router.get("/", getTags);
+router.get("/category", getCategory);
 router.get("/:id", getTagById);
 
 export default router;
