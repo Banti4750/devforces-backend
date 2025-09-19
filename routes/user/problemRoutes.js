@@ -36,7 +36,8 @@ const getProblems = async (req, res) => {
 
         // Format output
         const formattedProblems = problems.map((p, index) => ({
-            id: index + 1, // or use p.id
+            sn: index + 1, // or use p.id
+            id: p.id,
             title: p.title,
             category: p.taskType || "General",
             difficulty: p.difficulty || "Unknown",
