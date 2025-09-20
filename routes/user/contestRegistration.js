@@ -1,20 +1,20 @@
 import express from "express";
+import moment from "moment";
 const router = express.Router();
 import { prisma } from "../../config/db.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
+import { sendRegistrationEmail, sendUnregistrationEmail } from "../../utils/sendEmail.js";
 
-// Register user for a contest
+
+
 router.post('/', verifyToken, async (req, res) => {
     const userId = req.user.id;
     const { contestId } = req.body;
 
     try {
-        // Check if the user is already registered for this contest
+        // Check if already registered
         const isRegistered = await prisma.contestRegistration.findFirst({
-            where: {
-                userId,
-                contestId
-            }
+            where: { userId, contestId }
         });
 
         if (isRegistered) {
@@ -24,15 +24,47 @@ router.post('/', verifyToken, async (req, res) => {
             });
         }
 
+        // Fetch user & contest
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const contest = await prisma.contest.findUnique({ where: { id: contestId } });
+        if (!contest) {
+            return res.status(404).json({ success: false, message: "Contest not found" });
+        }
+
         // Create registration
         const registration = await prisma.contestRegistration.create({
             data: { userId, contestId }
         });
 
+        // Format email content
+        const startDate = moment(contest.startTime).format("MMMM D, YYYY");
+        const startTime = moment(contest.startTime).format("hh:mm A");
+
+        // Send email
+        await sendRegistrationEmail(
+            user.email,
+            user.name || "Ghost",
+            contest.name,
+            startDate,
+            startTime
+        );
+
         res.status(200).json({
             success: true,
             message: "Registration successful",
-            registration
+            data: {
+                registration,
+                contest: {
+                    id: contest.id,
+                    name: contest.name,
+                    startDate,
+                    startTime
+                }
+            }
         });
 
     } catch (error) {
@@ -45,14 +77,63 @@ router.post('/', verifyToken, async (req, res) => {
     }
 });
 
-router.delete('/:id', verifyToken, async (req, res) => {
-    const { id } = req.params;
+
+router.delete('/', verifyToken, async (req, res) => {
+    const { id } = req.body;
+    const userId = req.user.id;
 
     try {
+        // Find registration and check ownership
+        const registration = await prisma.contestRegistration.findUnique({
+            where: { id },
+            include: {
+                contest: true,
+                user: true
+            }
+        });
+
+        if (!registration) {
+            return res.status(404).json({
+                success: false,
+                message: "Registration not found"
+            });
+        }
+
+        if (registration.userId !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not allowed to delete this registration"
+            });
+        }
+
+        // Delete registration
         await prisma.contestRegistration.delete({ where: { id } });
-        res.status(200).json({ success: true, message: "Registration deleted" });
+
+        // Format date for email
+        const startDate = moment(registration.contest.startTime).format("MMMM D, YYYY");
+        const startTime = moment(registration.contest.startTime).format("hh:mm A");
+
+        // Send email
+        await sendUnregistrationEmail(
+            registration.user.email,
+            registration.user.name || "Ghost",
+            registration.contest.name,
+            startDate,
+            startTime
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Registration deleted successfully"
+        });
+
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
     }
 });
 
