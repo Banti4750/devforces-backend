@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../../config/db.js";
+import moment from "moment";
 const router = Router();
 
 
@@ -11,16 +12,39 @@ router.get("/", async (req, res) => {
                 problems: {
                     include: {
                         problem: true,
-                    }
+                    },
                 },
-                registrations: true
-            }
+                registrations: true,
+                author: {
+                    select: { email: true, name: true },
+                },
+            },
         });
-        res.json(contests);
+
+        const formatted = contests.map((contest, index) => {
+            const start = moment(contest.startTime).format("MMM DD, YYYY HH:mm");
+            const hours = Math.floor(contest.duration / 60);
+            const minutes = contest.duration % 60;
+            const length = `${hours}:${minutes.toString().padStart(2, "0")}`;
+
+            return {
+                id: contest.id,
+                name: contest.name,
+                writers: contest.author?.name || "Unknown",
+                start,
+                length,
+                participants: `~${contest.registrations.length}`,
+                status: contest.status.toLowerCase(),
+            };
+        });
+
+        res.json(formatted);
     } catch (err) {
         res.status(500).json({ message: "Error fetching contests", error: err.message });
     }
 });
+
+
 
 
 // GET /contests/:id
