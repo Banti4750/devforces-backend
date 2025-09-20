@@ -1,18 +1,17 @@
 import { Router } from "express";
 import { prisma } from "../../config/db.js";
 import moment from "moment";
+import { verifyToken } from "../../middleware/verifyToken.js";
 const router = Router();
 
 
 //get all contests
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
     try {
         const contests = await prisma.contest.findMany({
             include: {
                 problems: {
-                    include: {
-                        problem: true,
-                    },
+                    include: { problem: true },
                 },
                 registrations: true,
                 author: {
@@ -21,11 +20,15 @@ router.get("/", async (req, res) => {
             },
         });
 
-        const formatted = contests.map((contest, index) => {
+        const formatted = contests.map((contest) => {
             const start = moment(contest.startTime).format("MMM DD, YYYY HH:mm");
             const hours = Math.floor(contest.duration / 60);
             const minutes = contest.duration % 60;
             const length = `${hours}:${minutes.toString().padStart(2, "0")}`;
+
+            const userRegistration = contest.registrations.find(
+                (r) => r.userId === req.user.id
+            );
 
             return {
                 id: contest.id,
@@ -34,15 +37,21 @@ router.get("/", async (req, res) => {
                 start,
                 length,
                 participants: `~${contest.registrations.length}`,
-                status: contest.status.toLowerCase(),
+                status: contest.status?.toLowerCase() || "unknown",
+                isRegistered: Boolean(userRegistration),
+                registrationId: userRegistration ? userRegistration.id : null,
             };
         });
 
         res.json(formatted);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching contests", error: err.message });
+        res.status(500).json({
+            message: "Error fetching contests",
+            error: err.message,
+        });
     }
 });
+
 
 
 
