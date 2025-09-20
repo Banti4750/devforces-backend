@@ -184,8 +184,8 @@ model Submission {
 
   code     String // Submitted code
   language String // Programming language used
-  status   SubmissionStatus @default(PENDING)
-  points   Int              @default(0)
+  // status   SubmissionStatus @default(PENDING)
+  points   Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

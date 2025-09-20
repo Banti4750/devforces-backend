@@ -12,6 +12,7 @@ import adminProblemRoutes from './routes/admin/problemRoutes.js';
 import userProblemRoutes from './routes/user/problemRoutes.js';
 import adminTestCaseRoutes from './routes/admin/testcaseRoutes.js'
 import userRegistrationRoutes from './routes/user/contestRegistration.js'
+import userSubmissionRoutes from './routes/user/submissionRoutes.js'
 
 dotenv.config();
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/contests', userContestRoutes);
 app.use('/api/tags', userTagRoutes);
 app.use('/api/problems', userProblemRoutes);
 app.use('/api/contest-registration', userRegistrationRoutes)
+app.use('/api/submission', userSubmissionRoutes);
 
 //admin routes
 app.use('/api/admin/auth', adminAuthRoutes);
