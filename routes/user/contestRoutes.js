@@ -7,7 +7,14 @@ const router = Router();
 router.get("/", async (req, res) => {
     try {
         const contests = await prisma.contest.findMany({
-            include: { problems: { include: { problem: true } } },
+            include: {
+                problems: {
+                    include: {
+                        problem: true,
+                    }
+                },
+                registrations: true
+            }
         });
         res.json(contests);
     } catch (err) {
@@ -21,7 +28,14 @@ router.get("/:id", async (req, res) => {
     try {
         const contest = await prisma.contest.findUnique({
             where: { id: req.params.id },
-            include: { problems: { include: { problem: true } } },
+            include: {
+                problems: {
+                    include: {
+                        problem: true,
+                    }
+                },
+                registrations: true
+            }
         });
 
         if (!contest) return res.status(404).json({ message: "Contest not found" });
