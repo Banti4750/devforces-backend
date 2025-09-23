@@ -65,17 +65,34 @@ router.get("/:id", async (req, res) => {
                 problems: {
                     include: {
                         problem: true,
-                    }
+                    },
                 },
-                registrations: true
-            }
+                registrations: true,
+            },
         });
 
-        if (!contest) return res.status(404).json({ message: "Contest not found" });
+        if (!contest) {
+            return res.status(404).json({ message: "Contest not found" });
+        }
 
-        res.json(contest);
+
+        const now = new Date();
+
+        if (contest.startTime && contest.startTime.getTime() > now.getTime()) {
+            return res.status(403).json({ message: "Contest not started yet" });
+        }
+
+        if (contest.endTime && contest.endTime.getTime() < now.getTime()) {
+            return res.status(403).json({ message: "Contest already ended" });
+        }
+
+
+        return res.json(contest);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching contest", error: err.message });
+        return res.status(500).json({
+            message: "Error fetching contest",
+            error: err.message,
+        });
     }
 });
 

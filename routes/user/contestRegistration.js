@@ -5,22 +5,20 @@ import { prisma } from "../../config/db.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
 import { sendRegistrationEmail, sendUnregistrationEmail } from "../../utils/sendEmail.js";
 
-
-
-router.post('/', verifyToken, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
     const userId = req.user.id;
     const { contestId } = req.body;
 
     try {
         // Check if already registered
         const isRegistered = await prisma.contestRegistration.findFirst({
-            where: { userId, contestId }
+            where: { userId, contestId },
         });
 
         if (isRegistered) {
             return res.status(400).json({
                 success: false,
-                message: "Already registered for this contest"
+                message: "Already registered for this contest",
             });
         }
 
@@ -35,9 +33,27 @@ router.post('/', verifyToken, async (req, res) => {
             return res.status(404).json({ success: false, message: "Contest not found" });
         }
 
+        const now = new Date();
+
+        // Registration only allowed before contest starts
+        if (contest.startTime && contest.startTime.getTime() <= now.getTime()) {
+            return res.status(403).json({
+                success: false,
+                message: "Registration closed. Contest already started.",
+            });
+        }
+
+        // If contest already ended
+        if (contest.endTime && contest.endTime.getTime() < now.getTime()) {
+            return res.status(403).json({
+                success: false,
+                message: "Registration closed. Contest already ended.",
+            });
+        }
+
         // Create registration
         const registration = await prisma.contestRegistration.create({
-            data: { userId, contestId }
+            data: { userId, contestId },
         });
 
         // Format email content
@@ -62,23 +78,21 @@ router.post('/', verifyToken, async (req, res) => {
                     id: contest.id,
                     name: contest.name,
                     startDate,
-                    startTime
-                }
-            }
+                    startTime,
+                },
+            },
         });
-
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
             message: "Internal server error",
-            error: error.message
+            error: error.message,
         });
     }
 });
 
-
-router.delete('/', verifyToken, async (req, res) => {
+router.delete("/", verifyToken, async (req, res) => {
     const { id } = req.body;
     const userId = req.user.id;
 
@@ -88,21 +102,31 @@ router.delete('/', verifyToken, async (req, res) => {
             where: { id },
             include: {
                 contest: true,
-                user: true
-            }
+                user: true,
+            },
         });
 
         if (!registration) {
             return res.status(404).json({
                 success: false,
-                message: "Registration not found"
+                message: "Registration not found",
             });
         }
 
         if (registration.userId !== userId) {
             return res.status(403).json({
                 success: false,
-                message: "You are not allowed to delete this registration"
+                message: "You are not allowed to delete this registration",
+            });
+        }
+
+        const now = new Date();
+
+        // Prevent unregistration after contest starts
+        if (registration.contest.startTime && registration.contest.startTime.getTime() <= now.getTime()) {
+            return res.status(403).json({
+                success: false,
+                message: "Unregistration closed. Contest already started.",
             });
         }
 
@@ -124,18 +148,16 @@ router.delete('/', verifyToken, async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Registration deleted successfully"
+            message: "Registration deleted successfully",
         });
-
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
             message: "Internal server error",
-            error: error.message
+            error: error.message,
         });
     }
 });
-
 
 export default router;

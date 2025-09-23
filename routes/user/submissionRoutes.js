@@ -3,7 +3,7 @@ import { verifyToken } from '../../middleware/verifyToken.js';
 import express from "express";
 const router = express.Router();
 
-// Create submission
+// Create submission for normal problem
 router.post('/', verifyToken, async (req, res) => {
     const userId = req.user.id;
     const { problemId, contestId, code, language, points } = req.body;
@@ -37,5 +37,7 @@ router.post('/', verifyToken, async (req, res) => {
         });
     }
 });
+
+
 
 export default router;

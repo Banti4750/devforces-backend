@@ -88,12 +88,13 @@ model Problem {
   description String
   authorId    String     @db.ObjectId
   difficulty  Difficulty
+  timeLimit   Int        @default(10) // Duration in minutes
 
   // Development-specific fields
-  taskType     String // "auth-setup", "api-routes", "database-design", etc.
-  technologies String[] // ["Node.js", "Express", "MongoDB", etc.]
-  starterCode  String? // Optional starter code for the problem
-  solution     String? // Reference solution (for evaluation)
+  taskType     String
+  technologies String[]
+  starterCode  String?
+  solution     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
