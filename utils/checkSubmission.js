@@ -1,209 +1,191 @@
 import fetch from "node-fetch";
-import { prisma } from "../../config/db.js";
-import { exec } from "child_process";
-import util from "util";
+import { prisma } from "../config/db.js";
 
-const execAsync = util.promisify(exec);
+// Using Groq's free API (get key from https://console.groq.com/keys)
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_ENDPOINT =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
-
-// --- Helper: Run code locally (⚠️ sandbox for prod!) ---
-async function runCode(language, code, input) {
-    if (language === "javascript") {
-        const fs = await import("fs");
-        const file = "submission.js";
-        fs.writeFileSync(file, code);
-
-        try {
-            // Pass input as env or stdin if needed
-            const { stdout } = await execAsync(`node ${file}`);
-            return stdout.trim();
-        } catch (err) {
-            return `Runtime Error: ${err.message}`;
-        }
-    }
-
-    return "Language not supported in local runner";
-}
-
-/**
- * Check submission: run test cases + AI evaluation
- */
 export const checkSubmission = async (problemId, code, language = "javascript") => {
-    if (!GEMINI_API_KEY) {
-        throw new Error("Gemini API key not configured");
-    }
+    try {
+        console.log("GROQ_API_KEY:", GROQ_API_KEY ? "✅ Present" : "❌ Missing");
 
-    // 1. Fetch problem with testCases
-    const problem = await prisma.problem.findUnique({
-        where: { id: problemId },
-        include: { testCases: true },
-    });
+        if (!GROQ_API_KEY) {
+            throw new Error("GROQ_API_KEY not configured. Get one free at https://console.groq.com/keys");
+        }
 
-    if (!problem) {
-        throw new Error("Problem not found");
-    }
-
-    // Map difficulty → max points
-    const maxRange = {
-        EASY: 20,
-        MEDIUM: 60,
-        HARD: 100,
-    }[problem.difficulty.toUpperCase()] || 20;
-
-    // 2. Run test cases
-    let passed = 0;
-    const results = [];
-
-    for (const tc of problem.testCases) {
-        const output = await runCode(language, code, tc.input);
-        const success = output === tc.expectedOutput;
-
-        if (success) passed++;
-        results.push({
-            input: tc.input,
-            expected: tc.expectedOutput,
-            got: output,
-            success,
+        // 1. Fetch problem with testCases
+        const problem = await prisma.problem.findUnique({
+            where: { id: problemId },
+            include: { testCases: true },
         });
-    }
 
-    const testScore = Math.round((passed / problem.testCases.length) * maxRange);
+        if (!problem) {
+            throw new Error("Problem not found");
+        }
 
-    // 3. Gemini analysis
-    const prompt = `
-You are a coding judge.
+        // Map difficulty → max points
+        const maxRange = {
+            EASY: 20,
+            MEDIUM: 60,
+            HARD: 100,
+        }[problem.difficulty.toUpperCase()] || 20;
+
+        // Format test cases for better AI understanding
+        const testCasesText = problem.testCases
+            .map(tc => `Input: ${tc.input}\nExpected: ${tc.expectedOutput}\nExplanation: ${tc.explanation || 'N/A'}`)
+            .join('\n---\n');
+
+        // Enhanced AI analysis prompt with strict relevance check
+        const prompt = `You are a coding judge for DevForces platform that evaluates software development solutions.
 
 Problem: ${problem.title}
+Description: ${problem.description}
 Difficulty: ${problem.difficulty}
 Language: ${language}
+Technologies: ${problem.technologies?.join(', ') || 'Not specified'}
 
-Submission:
+Test Cases:
+${testCasesText}
+
+Submission Code:
 \`\`\`${language}
 ${code}
 \`\`\`
 
-The submission ran ${problem.testCases.length} test cases.
-Passed: ${passed}, Failed: ${problem.testCases.length - passed}
+CRITICAL: First check if the submission is related to the problem requirements. If the code is:
+- Completely unrelated to the problem
+- Just random text, comments, or placeholder code
+- Not attempting to solve the given problem
+- Empty or contains only basic examples unrelated to requirements
 
-Return ONLY valid JSON:
+Then give aiScore: 0
+
+Otherwise, evaluate based on:
+1. Correctness - Does it solve the problem requirements?
+2. Code quality - Clean, readable, maintainable code
+3. Best practices - Follows language/framework conventions
+4. Test case coverage - Addresses the given test scenarios
+5. Schema design (if applicable) - Proper relationships, constraints, normalization
+
+Return ONLY valid JSON (no markdown, no extra text):
 {
-  "syntaxErrors": string|null,
-  "logicIssues": string|null,
-  "styleSuggestions": string|null,
-  "aiScore": number (0-${maxRange})
+    "syntaxErrors": "string describing syntax issues or null",
+    "logicIssues": "string describing logic problems or null",
+    "styleSuggestions": "string with code style improvements or null",
+    "aiScore": number_between_0_and_${maxRange},
+    "isRelevant": true_or_false
 }
-`;
 
-    const response = await fetch(`${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-        }),
-    });
+If isRelevant is false, aiScore must be 0.`;
 
-    const data = await response.json();
-    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        // Try multiple models in case one doesn't work
+        const models = [
+            "llama-3.1-8b-instant",
+            "llama3-8b-8192",
+            "mixtral-8x7b-32768",
+            "gemma-7b-it"
+        ];
 
-    let aiEval = {};
-    try {
-        aiEval = JSON.parse(output);
-    } catch {
-        aiEval = { aiScore: Math.round(testScore / 2), feedback: output };
+        let response;
+        let lastError;
+
+        for (const model of models) {
+            try {
+                console.log(`Trying model: ${model}`);
+
+                response = await fetch(GROQ_ENDPOINT, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${GROQ_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 1000
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log(`✅ Successfully connected with model: ${model}`);
+                    break;
+                } else {
+                    const errorText = await response.text();
+                    console.log(`❌ Failed with ${model}:`, response.status);
+                    lastError = `${response.status} ${response.statusText} - ${errorText}`;
+                }
+            } catch (err) {
+                console.log(`❌ Network error with ${model}:`, err.message);
+                lastError = err.message;
+                continue;
+            }
+        }
+
+        if (!response || !response.ok) {
+            throw new Error(`All Groq models failed. Last error: ${lastError}`);
+        }
+
+        const data = await response.json();
+        console.log("✅ Successfully got response from Groq");
+
+        // Extract and parse the AI response
+        const aiResponseText = data.choices?.[0]?.message?.content;
+
+        if (!aiResponseText) {
+            throw new Error("No response from Groq AI");
+        }
+
+        // Clean the response (remove markdown code blocks if present)
+        const cleanedResponse = aiResponseText
+            .replace(/```json\s*/, '')
+            .replace(/```\s*$/, '')
+            .trim();
+
+        let aiResult;
+        try {
+            aiResult = JSON.parse(cleanedResponse);
+        } catch (parseError) {
+            console.error("Failed to parse AI response:", cleanedResponse);
+            // Fallback scoring if AI response is malformed
+            aiResult = {
+                syntaxErrors: "Unable to parse AI response",
+                logicIssues: null,
+                styleSuggestions: null,
+                aiScore: Math.floor(maxRange * 0.3) // 30% fallback score
+            };
+        }
+
+        // Validate score is within expected range
+        const score = Math.max(0, Math.min(maxRange, aiResult.aiScore || 0));
+
+        return {
+            success: true,
+            score: score,
+            feedback: {
+                syntaxErrors: aiResult.syntaxErrors,
+                logicIssues: aiResult.logicIssues,
+                styleSuggestions: aiResult.styleSuggestions,
+                isRelevant: aiResult.isRelevant
+            },
+            maxScore: maxRange,
+            problem: {
+                title: problem.title,
+                difficulty: problem.difficulty
+            }
+        };
+
+    } catch (error) {
+        console.error("Error in checkSubmission:", error);
+        return {
+            success: false,
+            score: 0,
+            error: error.message
+        };
     }
-
-    // Clamp AI score
-    aiEval.aiScore = Math.max(0, Math.min(maxRange, aiEval.aiScore || 0));
-
-    // 4. Final score (70% testcases + 30% AI feedback)
-    const finalScore = Math.round(testScore * 0.7 + aiEval.aiScore * 0.3);
-
-    return {
-        success: true,
-        problem: {
-            id: problem.id,
-            title: problem.title,
-            difficulty: problem.difficulty,
-        },
-        results, // detailed per-testcase
-        scores: {
-            testScore,
-            aiScore: aiEval.aiScore,
-            finalScore,
-            maxRange,
-        },
-        feedback: {
-            syntaxErrors: aiEval.syntaxErrors || null,
-            logicIssues: aiEval.logicIssues || null,
-            styleSuggestions: aiEval.styleSuggestions || null,
-        },
-    };
 };
-
-
-// Mocked contest problems (your format, trimmed for clarity)
-const problems = [
-    {
-        id: "68c606a897acece2a12e68ae",
-        title: "REST API for Task Management",
-        difficulty: "MEDIUM",
-        starterCode: "// Scaffold with Express router",
-        solution: "// Complete CRUD with pagination",
-        testCases: [
-            { input: "POST /tasks {title:'Test'}", expectedOutput: "201 Created" },
-            { input: "GET /tasks", expectedOutput: "200 OK with list" },
-            { input: "GET /tasks?page=2", expectedOutput: "Paginated list" }
-        ]
-    },
-    {
-        id: "68c62ab5e55c102adff93a7c",
-        title: "Setup JWT Authentication in Express",
-        difficulty: "MEDIUM",
-        starterCode: "app.post('/login', async (req, res) => { /* TODO */ })",
-        solution: "Use bcrypt for password hashing and jsonwebtoken for signing tokens.",
-        testCases: [
-            { input: "POST /signup {email, password}", expectedOutput: "201 Created" },
-            { input: "POST /login {email, password}", expectedOutput: "200 OK + JWT" },
-            { input: "GET /protected with token", expectedOutput: "200 OK" }
-        ]
-    },
-    {
-        id: "68c62ad3e55c102adff93a80",
-        title: "Design a Blog API",
-        difficulty: "EASY",
-        starterCode: "router.get('/posts', async (req, res) => { /* TODO */ })",
-        solution: "Implement GET/POST/PUT/DELETE routes.",
-        testCases: [
-            { input: "POST /posts {title,content}", expectedOutput: "201 Created" },
-            { input: "GET /posts", expectedOutput: "200 OK with list" }
-        ]
-    },
-    {
-        id: "68c62aebe55c102adff93a84",
-        title: "E-Commerce Checkout System",
-        difficulty: "HARD",
-        starterCode: "const orderSchema = new mongoose.Schema({ /* TODO */ })",
-        solution: "Schemas for users/products/orders + Stripe Checkout.",
-        testCases: [
-            { input: "POST /checkout {cart}", expectedOutput: "Stripe session created" },
-            { input: "POST /order {cart}", expectedOutput: "Order saved" },
-            { input: "GET /orders", expectedOutput: "List of orders" }
-        ]
-    }
-];
-
-// scoring ranges
-const scoreRanges = {
-    EASY: 20,
-    MEDIUM: 60,
-    HARD: 100
-};
-
-
-
-// Example run
-const userCode = "Use bcrypt for password hashing and jsonwebtoken for signing tokens.";
-console.log(checkSubmission("68c62ab5e55c102adff93a7c", userCode));
