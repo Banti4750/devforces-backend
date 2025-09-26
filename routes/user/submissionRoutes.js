@@ -1,12 +1,13 @@
 import { prisma } from '../../config/db.js';
 import { verifyToken } from '../../middleware/verifyToken.js';
 import express from "express";
+import { checkSubmission } from '../../utils/checkSubmission.js';
 const router = express.Router();
 
 // Create submission for normal problem
 router.post('/', verifyToken, async (req, res) => {
     const userId = req.user.id;
-    const { problemId, contestId, code, language, points } = req.body;
+    const { problemId, contestId, code, language } = req.body;
 
     if (!problemId || !code || !language) {
         return res.status(400).json({
@@ -16,17 +17,20 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     try {
-
-        // TODO:add ai for calculate pints
+        // add ai for calculate pints
+        const response = await checkSubmission(problemId, code, language);
+        const points = response.score;
+        console.log(points)
         // by giving problem description , test case ,
         const submission = await prisma.submission.create({
             data: { userId, problemId, contestId, language, code, points }
         });
 
+
         res.status(200).json({
             success: true,
             message: "Submission successful",
-            submission
+            // submission
         });
     } catch (error) {
         console.error(error);
