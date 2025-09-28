@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
+import "./utils/nodeCron.js";
 import { prisma } from './config/db.js';
 import adminContestRoutes from './routes/admin/contestRoutes.js';
 import authRoutes from './routes/user/authRoutes.js';
