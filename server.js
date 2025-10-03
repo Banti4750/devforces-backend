@@ -14,6 +14,8 @@ import userProblemRoutes from './routes/user/problemRoutes.js';
 import adminTestCaseRoutes from './routes/admin/testcaseRoutes.js'
 import userRegistrationRoutes from './routes/user/contestRegistration.js'
 import userSubmissionRoutes from './routes/user/submissionRoutes.js'
+import userLeaderBoardRoutes from './routes/user/leaderBoard.js';
+import adminLeaderBoardRoutes from './routes/admin/leaderBoard.js';
 
 dotenv.config();
 const app = express();
@@ -28,13 +30,15 @@ app.use('/api/tags', userTagRoutes);
 app.use('/api/problems', userProblemRoutes);
 app.use('/api/contest-registration', userRegistrationRoutes)
 app.use('/api/submission', userSubmissionRoutes);
+app.use('/api/leaderboard', userLeaderBoardRoutes);
 
 //admin routes
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/contests', adminContestRoutes);
 app.use('/api/admin/tags', adminTagRoutes);
 app.use('/api/admin/problems', adminProblemRoutes);
-app.use('/api/admin/testcase', adminTestCaseRoutes)
+app.use('/api/admin/testcase', adminTestCaseRoutes);
+app.use('/api/admin/leaderboard', adminLeaderBoardRoutes);
 
 //test route
 app.get('/', async (req, res) => {
