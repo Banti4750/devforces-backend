@@ -18,7 +18,7 @@ import userLeaderBoardRoutes from './routes/user/leaderBoard.js';
 import adminLeaderBoardRoutes from './routes/admin/leaderBoard.js';
 import userFaqRoutes from './routes/user/faqRoutes.js';
 import userFeedbackRoutes from './routes/user/userFeedbackRoutes.js';
-import userQueryRoutes from './routes/user/userQueryRoutes.js'
+import userQueryRoutes from './routes/user/userQueryRoutes.js';
 
 dotenv.config();
 const app = express();
