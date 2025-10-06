@@ -34,6 +34,12 @@ enum SubmissionStatus {
   COMPILATION_ERROR
 }
 
+enum UserQueryStatus {
+  pending
+  resolved
+  closed
+}
+
 model User {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   email        String   @unique
@@ -57,6 +63,8 @@ model User {
   contestsAuthored     Contest[]             @relation("ContestAuthor")
   leaderboardEntry     Leaderboard?
   ratings              RatingHistory[]
+  UserFeedback         UserFeedback[]
+  UserQuery            UserQuery[]
 
   @@map("users")
 }
@@ -236,4 +244,36 @@ model RatingHistory {
   contest Contest @relation(fields: [contestId], references: [id])
 
   @@map("rating_history")
+}
+
+model UserFeedback {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  feedback  String
+  rating    Int?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model UserQuery {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  subject    String
+  message    String
+  status     String   @default("pending") // e.g., "pending", "resolved", "closed"
+  adminReply String? // optional admin response
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Faq {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  question  String
+  answer    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
