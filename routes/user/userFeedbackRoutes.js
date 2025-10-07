@@ -22,6 +22,19 @@ export const postFeedback = async (req, res) => {
                 .json({ success: false, message: "Rating must be between 1 and 5." });
         }
 
+        // Get user details
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { email: true, name: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found."
+            });
+        }
+
         const newFeedback = await prisma.userFeedback.create({
             data: {
                 userId,
@@ -30,9 +43,22 @@ export const postFeedback = async (req, res) => {
             },
         });
 
+        // Send thank you email
+        try {
+            await sendFeedbackEmail(
+                user.email,
+                user.name || 'Valued User',
+                rating,
+                feedback
+            );
+        } catch (emailError) {
+            console.error('Failed to send thank you email:', emailError);
+            // Continue even if email fails
+        }
+
         res.status(201).json({
             success: true,
-            message: "Feedback submitted successfully.",
+            message: "Feedback submitted successfully. Thank you!",
             feedback: newFeedback,
         });
     } catch (error) {
@@ -44,7 +70,6 @@ export const postFeedback = async (req, res) => {
         });
     }
 };
-
 router.post("/", verifyToken, postFeedback);
 
 export default router;

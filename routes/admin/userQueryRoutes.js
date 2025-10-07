@@ -27,7 +27,7 @@ router.get("/", verifyAdminToken, async (req, res) => {
 // Update query status
 router.put("/:id", verifyAdminToken, async (req, res) => {
     try {
-        const id = req.params.id; // keep as string
+        const id = req.params.id;
         const { status, adminReply } = req.body;
 
         if (!id) {
@@ -38,12 +38,38 @@ router.put("/:id", verifyAdminToken, async (req, res) => {
             return res.status(400).json({ success: false, message: "Status is required." });
         }
 
+        // Get the query details before updating
+        const existingQuery = await prisma.userQuery.findUnique({
+            where: { id },
+            include: {
+                user: true // Assuming you have a relation to the user model
+            }
+        });
+
+        if (!existingQuery) {
+            return res.status(404).json({ success: false, message: "Query not found." });
+        }
+
         const updatedQuery = await prisma.userQuery.update({
             where: { id },
             data: { status, adminReply },
         });
 
-        // Optionally send email notification to the user here
+        // Send email notification if query is resolved
+        if (status === 'resolved' && existingQuery.user?.email) {
+            try {
+                await sendQueryResolveEmail(
+                    existingQuery.user.email,
+                    existingQuery.user.name || 'User',
+                    existingQuery.subject || 'Your Query',
+                    existingQuery.message || existingQuery.query,
+                    adminReply
+                );
+            } catch (emailError) {
+                console.error('Failed to send email notification:', emailError);
+                // Continue even if email fails
+            }
+        }
 
         res.status(200).json({
             success: true,
