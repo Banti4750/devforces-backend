@@ -497,21 +497,4 @@ async function sendUnregistrationEmail(email, userName, contestName, contestDate
 // Export both functions
 export { sendRegistrationEmail, sendUnregistrationEmail };
 
-// Example usage:
 
-// For registration
-// await sendRegistrationEmail(
-//     'bantikumar6203818460@gmail.com',
-//     'John Doe',
-//     'Web Development Championship 2025',
-//     'March 15, 2025',
-//     '10:00 AM IST'
-// );
-
-// For unregistration
-// await sendUnregistrationEmail(
-//     'bantikumar6203818460@gmail.com',
-//     'John Doe',
-//     'Web Development Championship 2025',
-//     'March 15, 2025'
-// );

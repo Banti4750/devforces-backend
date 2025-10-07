@@ -7,7 +7,7 @@ import { verifyToken } from "../../middleware/verifyToken.js";
 export const postQuery = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { subject, message, status } = req.body;
+        const { subject, message } = req.body;
 
         // Validate required fields
         if (!userId || !subject || !message) {
@@ -22,7 +22,7 @@ export const postQuery = async (req, res) => {
                 userId,
                 subject,
                 message,
-                status: status || "pending",
+                status: "pending",
             },
         });
 

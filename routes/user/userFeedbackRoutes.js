@@ -10,7 +10,7 @@ export const postFeedback = async (req, res) => {
         const { feedback, rating } = req.body;
 
         // Validation
-        if (!userId || !feedback || rating == null) {
+        if (!userId || !feedback) {
             return res
                 .status(400)
                 .json({ success: false, message: "Feedback and rating are required." });
