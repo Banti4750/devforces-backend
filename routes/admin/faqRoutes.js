@@ -1,6 +1,6 @@
 import express from 'express'
-import { prisma } from '../../config/db';
-import { verifyAdminToken } from '../../middleware/verifyToken';
+import { verifyAdminToken } from '../../middleware/verifyToken.js';
+import { prisma } from '../../config/db.js';
 const router = express.Router();
 
 //add faq
@@ -27,9 +27,7 @@ router.post("/", verifyAdminToken, async (req, res) => {
 //delete faq
 router.delete("/:id", verifyAdminToken, async (req, res) => {
     try {
-        // if ((id)) {
-        //     return res.status(400).json({ success: false, message: "Invalid faq ID." });
-        // }
+        const id = (req.params.id);
         const faq = await prisma.faq.delete({
             where: { id }
         })

@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import { prisma } from "../../config/db.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
+import { sendFeedbackEmail } from "../../utils/sendEmailForFeedback.js";
 
 // POST /api/feedback
 export const postFeedback = async (req, res) => {

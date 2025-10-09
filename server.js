@@ -19,6 +19,9 @@ import adminLeaderBoardRoutes from './routes/admin/leaderBoard.js';
 import userFaqRoutes from './routes/user/faqRoutes.js';
 import userFeedbackRoutes from './routes/user/userFeedbackRoutes.js';
 import userQueryRoutes from './routes/user/userQueryRoutes.js';
+import adminFaqRoutes from './routes/admin/faqRoutes.js';
+import adminFeedbackRoutes from './routes/admin/userFeedbackRoutes.js';
+import adminQueryRoutes from './routes/admin/userQueryRoutes.js';
 
 dotenv.config();
 const app = express();
@@ -45,6 +48,9 @@ app.use('/api/admin/tags', adminTagRoutes);
 app.use('/api/admin/problems', adminProblemRoutes);
 app.use('/api/admin/testcase', adminTestCaseRoutes);
 app.use('/api/admin/leaderboard', adminLeaderBoardRoutes);
+app.use('/api/admin/faq', adminFaqRoutes);
+app.use('/api/admin/feedback', adminFeedbackRoutes)
+app.use('/api/admin/query', adminQueryRoutes);
 
 
 //test route

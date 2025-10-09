@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import { prisma } from "../../config/db.js";
 import { verifyAdminToken } from "../../middleware/verifyToken.js";
+import { sendQueryResolveEmail } from "../../utils/sendEmailForUserQuery.js";
 
 // Get all queries
 router.get("/", verifyAdminToken, async (req, res) => {
