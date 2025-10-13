@@ -5,6 +5,7 @@ import { prisma } from "../../config/db.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
 
 //  Get all problems
+// Get all problems
 const getProblems = async (req, res) => {
     const { category, difficulty, tags } = req.body;
 
@@ -31,18 +32,22 @@ const getProblems = async (req, res) => {
                         tag: true,
                     },
                 },
+                submissions: {
+                    select: {
+                        userId: true,
+                    },
+                },
             },
         });
 
-        // Format output
         const formattedProblems = problems.map((p, index) => ({
-            sn: index + 1, // or use p.id
+            sn: index + 1,
             id: p.id,
             title: p.title,
             category: p.taskType || "General",
             difficulty: p.difficulty || "Unknown",
-            status: "unsolved", // later can map from submissions
-            tags: p.tags.map((t) => t.tag.name),
+            status: p.submissions?.length > 0 ? "solved" : "unsolved",
+            tags: p.tags?.map((t) => t.tag.name) || [],
         }));
 
         res.json({ success: true, problems: formattedProblems });
@@ -55,6 +60,7 @@ const getProblems = async (req, res) => {
         });
     }
 };
+
 
 
 // Get problem by ID
