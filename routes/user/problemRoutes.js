@@ -4,7 +4,6 @@ const router = express.Router();
 import { prisma } from "../../config/db.js";
 import { verifyToken } from "../../middleware/verifyToken.js";
 
-//  Get all problems
 // Get all problems
 const getProblems = async (req, res) => {
     const { category, difficulty, tags } = req.body;
@@ -60,7 +59,6 @@ const getProblems = async (req, res) => {
         });
     }
 };
-
 
 
 // Get problem by ID

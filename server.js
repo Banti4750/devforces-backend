@@ -22,6 +22,7 @@ import userQueryRoutes from './routes/user/userQueryRoutes.js';
 import adminFaqRoutes from './routes/admin/faqRoutes.js';
 import adminFeedbackRoutes from './routes/admin/userFeedbackRoutes.js';
 import adminQueryRoutes from './routes/admin/userQueryRoutes.js';
+import userDashboardRoutes from './routes/user/userDashboardInfo.js'
 
 dotenv.config();
 const app = express();
@@ -40,6 +41,7 @@ app.use('/api/leaderboard', userLeaderBoardRoutes);
 app.use('/api/faq', userFaqRoutes)
 app.use('/api/feedback', userFeedbackRoutes)
 app.use('/api/query', userQueryRoutes);
+app.use('/api/dashboard', userDashboardRoutes)
 
 //admin routes
 app.use('/api/admin/auth', adminAuthRoutes);
