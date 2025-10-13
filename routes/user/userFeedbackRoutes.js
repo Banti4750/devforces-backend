@@ -45,17 +45,17 @@ export const postFeedback = async (req, res) => {
         });
 
         // Send thank you email
-        try {
-            await sendFeedbackEmail(
-                user.email,
-                user.name || 'Valued User',
-                rating,
-                feedback
-            );
-        } catch (emailError) {
-            console.error('Failed to send thank you email:', emailError);
-            // Continue even if email fails
-        }
+        // try {
+        //     await sendFeedbackEmail(
+        //         user.email,
+        //         user.name || 'Valued User',
+        //         rating,
+        //         feedback
+        //     );
+        // } catch (emailError) {
+        //     console.error('Failed to send thank you email:', emailError);
+        //     // Continue even if email fails
+        // }
 
         res.status(201).json({
             success: true,

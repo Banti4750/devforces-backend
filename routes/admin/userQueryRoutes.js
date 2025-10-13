@@ -57,20 +57,20 @@ router.put("/:id", verifyAdminToken, async (req, res) => {
         });
 
         // Send email notification if query is resolved
-        if (status === 'resolved' && existingQuery.user?.email) {
-            try {
-                await sendQueryResolveEmail(
-                    existingQuery.user.email,
-                    existingQuery.user.name || 'User',
-                    existingQuery.subject || 'Your Query',
-                    existingQuery.message || existingQuery.query,
-                    adminReply
-                );
-            } catch (emailError) {
-                console.error('Failed to send email notification:', emailError);
-                // Continue even if email fails
-            }
-        }
+        // if (status === 'resolved' && existingQuery.user?.email) {
+        //     try {
+        //         await sendQueryResolveEmail(
+        //             existingQuery.user.email,
+        //             existingQuery.user.name || 'User',
+        //             existingQuery.subject || 'Your Query',
+        //             existingQuery.message || existingQuery.query,
+        //             adminReply
+        //         );
+        //     } catch (emailError) {
+        //         console.error('Failed to send email notification:', emailError);
+        //         // Continue even if email fails
+        //     }
+        // }
 
         res.status(200).json({
             success: true,
