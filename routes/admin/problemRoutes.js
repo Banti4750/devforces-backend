@@ -128,13 +128,27 @@ const updateProblem = async (req, res) => {
 const deleteProblem = async (req, res) => {
     try {
         const { id } = req.params;
-        await prisma.problem.delete({ where: { id } });
-        res.json({ success: true, message: "Problem deleted" });
-    } catch (error) {
-        if (error.code === "P2025") {
+
+        // Check if problem exists
+        const problem = await prisma.problem.findUnique({ where: { id } });
+        if (!problem) {
             return res.status(404).json({ success: false, message: "Problem not found" });
         }
-        res.status(500).json({ success: false, message: "Failed to delete problem", error: error.message });
+
+        // Delete all related submissions first
+        await prisma.$transaction([
+            prisma.submission.deleteMany({ where: { problemId: id } }),
+            prisma.problem.delete({ where: { id } }),
+        ]);
+
+        res.json({ success: true, message: "Problem and related submissions deleted successfully" });
+    } catch (error) {
+        console.error("❌ Error deleting problem:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete problem",
+            error: error.message,
+        });
     }
 };
 
