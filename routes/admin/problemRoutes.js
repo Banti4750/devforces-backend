@@ -5,9 +5,39 @@ import { verifyAdminToken } from "../../middleware/verifyToken.js";
 const router = express.Router();
 
 // Create a new problem
+// const createProblem = async (req, res) => {
+//     try {
+//         const { title, description, difficulty, taskType, technologies, starterCode, solution, tags } = req.body;
+//         const authorId = req.user?.id;
+
+//         const problem = await prisma.problem.create({
+//             data: {
+//                 title,
+//                 description,
+//                 difficulty,
+//                 taskType,
+//                 technologies,
+//                 starterCode,
+//                 solution,
+//                 authorId,
+//                 tags: tags
+//                     ? {
+//                         create: tags.map((tagId) => ({ tagId })),
+//                     }
+//                     : undefined,
+//             },
+//             include: { tags: { include: { tag: true } } },
+//         });
+
+//         res.status(201).json({ success: true, problem });
+//     } catch (error) {
+//         res.status(500).json({ success: false, message: "Failed to create problem", error: error.message });
+//     }
+// };
+
 const createProblem = async (req, res) => {
     try {
-        const { title, description, difficulty, taskType, technologies, starterCode, solution, tags } = req.body;
+        const { title, description, difficulty, taskType, technologies, starterCode, solution, tags, testCases } = req.body;
         const authorId = req.user?.id;
 
         const problem = await prisma.problem.create({
@@ -25,8 +55,21 @@ const createProblem = async (req, res) => {
                         create: tags.map((tagId) => ({ tagId })),
                     }
                     : undefined,
+                testCases: testCases
+                    ? {
+                        create: testCases.map(tc => ({
+                            input: tc.input,
+                            expectedOutput: tc.expectedOutput,
+                            isPublic: tc.isPublic,
+                            explanation: tc.explanation
+                        }))
+                    }
+                    : undefined,
             },
-            include: { tags: { include: { tag: true } } },
+            include: {
+                tags: { include: { tag: true } },
+                testCases: true
+            },
         });
 
         res.status(201).json({ success: true, problem });
