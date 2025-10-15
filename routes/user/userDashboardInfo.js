@@ -67,7 +67,7 @@ router.get("/activity", verifyToken, async (req, res) => {
         const submissions = await prisma.submission.findMany({
             where: { userId },
             orderBy: { createdAt: "desc" },
-            take: 10,
+            take: 4,
             include: {
                 problem: {
                     select: { id: true, title: true, difficulty: true },
