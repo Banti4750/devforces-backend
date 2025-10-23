@@ -1,6 +1,8 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 dotenv.config();
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function getFeedbackTemplate(userName, rating, feedback) {
     // Generate star rating display
@@ -226,16 +228,6 @@ This is an automated email. Please do not reply directly to this message.
 
 export async function sendFeedbackEmail(email, userName, rating, feedback) {
     try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASSWORD,
-            },
-        });
-
         const { htmlTemplate, textTemplate } = getFeedbackTemplate(
             userName,
             rating,
@@ -243,10 +235,7 @@ export async function sendFeedbackEmail(email, userName, rating, feedback) {
         );
 
         const mailOptions = {
-            from: {
-                name: 'DevForces Platform',
-                address: process.env.USER
-            },
+            from: 'DevForces Platform <noreply@devforces.stravixglobaltech.com>',
             to: email,
             subject: `💜 Thank You for Your Valuable Feedback!`,
             text: textTemplate,
@@ -258,12 +247,17 @@ export async function sendFeedbackEmail(email, userName, rating, feedback) {
             }
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        const { data, error } = await resend.emails.send(mailOptions);
+
+        if (error) {
+            console.error(`Error sending feedback email:`, error);
+            throw new Error(`Failed to send feedback email: ${error.message}`);
+        }
 
         console.log(`Feedback thank you email sent successfully to ${email}`);
         return {
             success: true,
-            messageId: info.messageId,
+            messageId: data.id,
             email: email,
             type: 'Feedback Thank You'
         };
@@ -272,4 +266,4 @@ export async function sendFeedbackEmail(email, userName, rating, feedback) {
         console.error(`Error sending feedback email: ${error.message}`);
         throw new Error(`Failed to send feedback email: ${error.message}`);
     }
-} 7
+}
