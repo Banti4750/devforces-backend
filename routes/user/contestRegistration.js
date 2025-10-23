@@ -61,13 +61,17 @@ router.post("/", verifyToken, async (req, res) => {
         const startTime = moment(contest.startTime).format("hh:mm A");
 
         // Send email
-        // await sendRegistrationEmail(
-        //     user.email,
-        //     user.name || "Ghost",
-        //     contest.name,
-        //     startDate,
-        //     startTime
-        // );
+        try {
+            await sendRegistrationEmail(
+                user.email,
+                user.name || "Ghost",
+                contest.name,
+                startDate,
+                startTime
+            );
+        } catch (error) {
+            console.error("Failed to send registration email:", error);
+        }
 
         res.status(200).json({
             success: true,
@@ -138,13 +142,17 @@ router.delete("/", verifyToken, async (req, res) => {
         const startTime = moment(registration.contest.startTime).format("hh:mm A");
 
         // Send email
-        // await sendUnregistrationEmail(
-        //     registration.user.email,
-        //     registration.user.name || "Ghost",
-        //     registration.contest.name,
-        //     startDate,
-        //     startTime
-        // );
+        try {
+            await sendUnregistrationEmail(
+                registration.user.email,
+                registration.user.name || "Ghost",
+                registration.contest.name,
+                startDate,
+                startTime
+            );
+        } catch (error) {
+            console.error("Failed to send unregistration email:", error);
+        }
 
         res.status(200).json({
             success: true,
