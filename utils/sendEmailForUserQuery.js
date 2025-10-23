@@ -1,7 +1,9 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 dotenv.config();
 
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 function getQueryResolveTemplate(userName, querySubject, queryMessage, adminReply) {
     const htmlTemplate = `
         <!DOCTYPE html>
@@ -144,15 +146,7 @@ This is an automated email. Please do not reply directly to this message.
 
 export async function sendQueryResolveEmail(email, userName, querySubject, queryMessage, adminReply) {
     try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASSWORD,
-            },
-        });
+
         const { htmlTemplate, textTemplate } = getQueryResolveTemplate(
             userName,
             querySubject,
@@ -162,10 +156,7 @@ export async function sendQueryResolveEmail(email, userName, querySubject, query
 
 
         const mailOptions = {
-            from: {
-                name: 'DevForces Platform',
-                address: process.env.USER
-            },
+            from: 'DevForces Platform <noreply@devforces.stravixglobaltech.com>',
             to: email,
             subject: `✅ Query Resolved - ${querySubject}`,
             text: textTemplate,
@@ -177,12 +168,20 @@ export async function sendQueryResolveEmail(email, userName, querySubject, query
             }
         };
 
-        const info = await transporter.sendMail(mailOptions);
+
+        const { data, error } = await resend.emails.send(mailOptions);
+
+        if (error) {
+            console.error(`Error sending query email:`, error);
+            throw new Error(`Failed to send query email: ${error.message}`);
+        }
 
         console.log(`Query Resolve email sent successfully to ${email}`);
+
+
         return {
             success: true,
-            messageId: info.messageId,
+            messageId: data.id,
             email: email,
             type: 'Query Resolve'
         };

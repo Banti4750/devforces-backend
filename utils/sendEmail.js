@@ -1,6 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 dotenv.config();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Modern email templates
 const getRegistrationTemplate = (userName, contestName, contestDate, contestTime) => {
@@ -402,23 +403,12 @@ const getUnregistrationTemplate = (userName, contestName, contestDate) => {
 // Main email sending functions
 async function sendRegistrationEmail(email, userName, contestName, contestDate, contestTime) {
     try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASSWORD,
-            },
-        });
+
 
         const { htmlTemplate, textTemplate } = getRegistrationTemplate(userName, contestName, contestDate, contestTime);
 
         const mailOptions = {
-            from: {
-                name: 'DevForces Platform',
-                address: process.env.USER
-            },
+            from: 'DevForces Platform <noreply@devforces.stravixglobaltech.com>',
             to: email,
             subject: `🎉 Registration Confirmed - ${contestName}`,
             text: textTemplate,
@@ -430,16 +420,24 @@ async function sendRegistrationEmail(email, userName, contestName, contestDate, 
             }
         };
 
-        // console.log(`Sending registration confirmation to ${email} for contest: ${contestName}`);
-        const info = await transporter.sendMail(mailOptions);
+
+        const { data, error } = await resend.emails.send(mailOptions);
+
+        if (error) {
+            console.error(`Error sending Registration email:`, error);
+            throw new Error(`Failed to send Registration email: ${error.message}`);
+        }
 
         console.log(`Registration email sent successfully to ${email}`);
+
+
         return {
             success: true,
-            messageId: info.messageId,
+            messageId: data.id,
             email: email,
             type: 'registration'
         };
+
 
     } catch (error) {
         console.error(`Error sending registration email: ${error.message}`);
@@ -449,23 +447,12 @@ async function sendRegistrationEmail(email, userName, contestName, contestDate, 
 
 async function sendUnregistrationEmail(email, userName, contestName, contestDate) {
     try {
-        const transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASSWORD,
-            },
-        });
+
 
         const { htmlTemplate, textTemplate } = getUnregistrationTemplate(userName, contestName, contestDate);
 
         const mailOptions = {
-            from: {
-                name: 'DevForces Platform',
-                address: process.env.USER
-            },
+            from: 'DevForces Platform <noreply@devforces.stravixglobaltech.com>',
             to: email,
             subject: `✅ Unregistration Confirmed - ${contestName}`,
             text: textTemplate,
@@ -477,16 +464,24 @@ async function sendUnregistrationEmail(email, userName, contestName, contestDate
             }
         };
 
-        // console.log(`Sending unregistration confirmation to ${email} for contest: ${contestName}`);
-        const info = await transporter.sendMail(mailOptions);
+
+        const { data, error } = await resend.emails.send(mailOptions);
+
+        if (error) {
+            console.error(`Error sending Unregistration email:`, error);
+            throw new Error(`Failed to send Unregistration email: ${error.message}`);
+        }
 
         console.log(`Unregistration email sent successfully to ${email}`);
+
+
         return {
             success: true,
-            messageId: info.messageId,
+            messageId: data.id,
             email: email,
             type: 'unregistration'
         };
+
 
     } catch (error) {
         console.error(`Error sending unregistration email: ${error.message}`);
