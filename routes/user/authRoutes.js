@@ -87,7 +87,7 @@ router.get('/profile', verifyToken, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { id: true, email: true, firstName: true, lastName: true, role: true, profilePic: true, isVerified: true, country: true, organization: true, joinedAt: true }
+            select: { id: true, email: true, name: true, maxRank: true, currentRank: true, profilePic: true, isVerified: true, country: true, organization: true, joinedAt: true }
         });
         res.status(200).json({ user, joinedAtFormatted: moment(user.joinedAt).format('DD MMMM YYYY') });
     } catch (error) {
