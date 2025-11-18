@@ -96,6 +96,22 @@ router.get('/profile', verifyToken, async (req, res) => {
     }
 });
 
+router.put('/profile', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+    const { name, profilePic, country, organization } = req.body;
+    try {
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { name, profilePic, country, organization },
+            select: { id: true, email: true, name: true, maxRank: true, currentRank: true, profilePic: true, isVerified: true, country: true, organization: true, joinedAt: true }
+        });
+        res.status(200).json({ user: updatedUser });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 router.post('/logout', (req, res) => {
     // Logout logic here
     res.send('User logged out');
