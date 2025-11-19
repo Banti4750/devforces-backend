@@ -42,6 +42,66 @@ router.post('/', verifyToken, async (req, res) => {
     }
 });
 
+router.get('/', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+    const year = parseInt(req.query.year); // Changed from 'years' to 'year'
+
+    try {
+        // Get submissions for the specific year
+        const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
+        const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
+
+        const submissions = await prisma.submission.findMany({
+            where: {
+                userId,
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: {
+                createdAt: true
+            },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        // Group submissions by date and count them
+        const activityMap = {};
+        let totalSubmiisons = 0;
+
+        submissions.forEach(submission => {
+            const date = submission.createdAt.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+            if (activityMap[date]) {
+                activityMap[date]++;
+                totalSubmiisons++;
+            } else {
+                activityMap[date] = 1;
+                totalSubmiisons++;
+            }
+        });
+
+        // Convert to array format expected by frontend
+        const activityData = Object.keys(activityMap).map(date => ({
+            date: date,
+            count: activityMap[date]
+        }));
+
+        res.status(200).json({
+            success: true,
+            activityData: activityData,// Frontend expects 'activityData' key
+            totalSubmiisons: totalSubmiisons
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+});
 
 
 export default router;

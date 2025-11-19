@@ -112,6 +112,9 @@ router.put('/profile', verifyToken, async (req, res) => {
     }
 });
 
+
+
+
 router.post('/logout', (req, res) => {
     // Logout logic here
     res.send('User logged out');
