@@ -65,6 +65,7 @@ model User {
   ratings              RatingHistory[]
   UserFeedback         UserFeedback[]
   UserQuery            UserQuery[]
+  tutorials            Tutorial[]
 
   @@map("users")
 }
@@ -276,4 +277,40 @@ model Faq {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Tutorial {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  content     String // HTML content for written tutorials
+  type        TutorialType @default(WRITTEN)
+  difficulty  Difficulty // Reusing your existing Difficulty enum
+  authorId    String       @db.ObjectId
+  youtubeUrl  String? // For video tutorials
+
+  // Development-specific fields
+  technologies      String[] // Technologies covered (e.g., ["React", "Node.js", "MongoDB"])
+  tags              String[] // Custom tags for categorization
+  relatedProblemIds String[] @db.ObjectId // Array of related problem IDs
+
+  // Metadata
+  duration    Int? // Estimated reading/watching time in minutes
+  views       Int     @default(0)
+  isPublished Boolean @default(false)
+  isFeatured  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map("tutorials")
+}
+
+enum TutorialType {
+  WRITTEN
+  VIDEO
+  INTERACTIVE
 }

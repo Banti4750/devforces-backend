@@ -28,3 +28,16 @@ export const verifyAdminToken = (req, res, next) => {
         res.status(400).json({ message: 'Invalid Token' });
     }
 };
+
+
+export const authorizeRoles = (roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Insufficient permissions'
+            });
+        }
+        next();
+    };
+};
