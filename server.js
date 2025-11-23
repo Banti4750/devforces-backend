@@ -58,18 +58,18 @@ app.use('/api/admin/query', adminQueryRoutes);
 
 
 //test route
-app.get('/', async (req, res) => {
-    try {
-        const users = await prisma.user.findMany();
-        res.json(users);
-    } catch (error) {
-        console.error("Prisma error:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
+// app.get('/', async (req, res) => {
+//     try {
+//         const users = await prisma.user.findMany();
+//         res.json(users);
+//     } catch (error) {
+//         console.error("Prisma error:", error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
 
 
-app.get("/test", (req, res) => {
+app.get("/", (req, res) => {
     res.send("Devforces Backend is Live ✅");
 });
 
