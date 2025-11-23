@@ -114,6 +114,20 @@ router.put('/profile', verifyToken, async (req, res) => {
 
 
 
+router.get('/profile/:id', async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, name: true, maxRank: true, currentRank: true, profilePic: true, isVerified: true, country: true, organization: true, joinedAt: true }
+        });
+        res.status(200).json({ user, joinedAtFormatted: moment(user.joinedAt).format('DD MMMM YYYY') });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 
 router.post('/logout', (req, res) => {
     // Logout logic here
