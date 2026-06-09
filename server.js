@@ -70,10 +70,10 @@ app.use('/api/admin/query', adminQueryRoutes);
 
 
 app.get("/", (req, res) => {
-    res.send("Devforces Backend is Live ✅");
+    res.send("Devforces Backend is Live ");
 });
 
 
 app.listen(PORT, () => {
-    console.log(`✅ Server is running on http://localhost:${PORT}`);
+    console.log(` Server is running on http://localhost:${PORT}`);
 });
