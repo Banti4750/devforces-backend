@@ -61,7 +61,7 @@ app.use('/api/admin/query', adminQueryRoutes);
 
 
 app.get("/", (req, res) => {
-    res.send("Devforces Backend is Live ");
+    res.send("Devforces Backend is Live");
 });
 
 
